@@ -144,7 +144,7 @@ class TranscriptionService {
         'Authorization': 'Bearer $apiKey',
       },
       body: json.encode({
-        'model': 'gpt-3.5-turbo',
+        'model': 'gpt-4o-mini',
         'messages': [
           {
             'role': 'system',
