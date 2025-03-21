@@ -7,6 +7,9 @@
     <!-- For Android 13+ (API level 33+) -->
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
     
+    <!-- Make sure the INTERNET permission is included -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    
     <application
         android:label="audiowiz"
         android:name="${applicationName}"

@@ -4,12 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:audiowiz/core/constants/app_theme.dart';
 import 'package:audiowiz/features/recording/screens/home_screen.dart';
 
-Future<void> main() async {
+void main() async {
+  // Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Load environment variables
-  await dotenv.load(fileName: '.env');
+  // Load environment variables from .env file
+  await dotenv.load();
   
+  // Then run your app
   runApp(
     const ProviderScope(
       child: AudioWizApp(),

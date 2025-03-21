@@ -316,13 +316,14 @@ class _TranscriptionScreenState extends ConsumerState<TranscriptionScreen> {
       ),
     );
     
-    // Pass the selected language to the transcription service
-    final success = await TranscriptionService.instance.startFileTranscription(
+    // Use the transcription service to generate a transcription
+    final result = await TranscriptionService.instance.startFileTranscription(
       _recording, 
       language: _selectedLanguage,
     );
     
-    if (success) {
+    // Handle different result types
+    if (result.success) {
       // Refresh recording data from database
       final updated = await DatabaseService.instance.getRecordingById(_recording.id!);
       if (updated != null && mounted) {
@@ -334,7 +335,7 @@ class _TranscriptionScreenState extends ConsumerState<TranscriptionScreen> {
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Transcription completed successfully'),
+            content: Text('✅ Transcription completed successfully'),
             duration: Duration(seconds: 2),
           ),
         );
@@ -345,10 +346,15 @@ class _TranscriptionScreenState extends ConsumerState<TranscriptionScreen> {
           _isProcessing = false;
         });
         
+        // Display the specific error message
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to process recording. Please check your API key and network connection.'),
-            duration: Duration(seconds: 4),
+          SnackBar(
+            content: Text('❌ ${result.errorMessage}'),
+            duration: const Duration(seconds: 4),
+            action: SnackBarAction(
+              label: 'Help',
+              onPressed: () => _showApiKeyHelp(),
+            ),
           ),
         );
       }
@@ -425,5 +431,53 @@ class _TranscriptionScreenState extends ConsumerState<TranscriptionScreen> {
     final remainingSeconds = seconds - minutes * 60;
     
     return '$minutes:${remainingSeconds.toString().padLeft(2, '0')}';
+  }
+  
+  // Add a helper method to show API key configuration help
+  void _showApiKeyHelp() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('API Configuration Help'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'To use the transcription feature, you need a valid OpenAI API key.',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                '1. Create an account at openai.com\n'
+                '2. Generate an API key in your account dashboard\n'
+                '3. Add the API key to your .env file:',
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: const Text('OPENAI_API_KEY=your_api_key_here\nOPENAI_API_BASE=https://api.openai.com'),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Restart the app after adding your API key.',
+                style: TextStyle(fontStyle: FontStyle.italic),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
   }
 } 

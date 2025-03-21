@@ -7,7 +7,17 @@ import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:path/path.dart' as path;
 
-
+// Create a result class to provide more detailed information
+class TranscriptionResult {
+  final bool success;
+  final String errorMessage;
+  
+  TranscriptionResult({required this.success, this.errorMessage = ''});
+  
+  static TranscriptionResult successful() => TranscriptionResult(success: true);
+  static TranscriptionResult failure(String message) => 
+      TranscriptionResult(success: false, errorMessage: message);
+}
 
 class TranscriptionService {
   static final TranscriptionService _instance = TranscriptionService._internal();
@@ -34,12 +44,28 @@ class TranscriptionService {
   }
   
   // Transcription using OpenAI Whisper API
-  Future<bool> startFileTranscription(Recording recording, {String language = 'en'}) async {
+  Future<TranscriptionResult> startFileTranscription(Recording recording, {String language = 'en'}) async {
     if (!await initialize()) {
-      return false;
+      return TranscriptionResult.failure(
+        'API key not found. Please add your OpenAI API key to the .env file.'
+      );
     }
     
     try {
+      // Check internet connectivity
+      try {
+        final result = await InternetAddress.lookup('openai.com');
+        if (result.isEmpty || result[0].rawAddress.isEmpty) {
+          return TranscriptionResult.failure(
+            'No internet connection. Please check your network and try again.'
+          );
+        }
+      } on SocketException catch (_) {
+        return TranscriptionResult.failure(
+          'No internet connection. Please check your network and try again.'
+        );
+      }
+      
       final transcription = await _transcribeWithWhisper(recording.filePath, language: language);
       
       // Update recording with transcription
@@ -50,16 +76,39 @@ class TranscriptionService {
       
       // Save to database
       await DatabaseService.instance.updateRecording(updatedRecording);
-      return true;
+      return TranscriptionResult.successful();
     } catch (e) {
       print('Transcription error: $e');
-      return false;
+      String errorMessage = 'Failed to transcribe audio';
+      
+      if (e.toString().contains('401')) {
+        errorMessage = 'Invalid API key. Please check your OpenAI API key.';
+      } else if (e.toString().contains('429')) {
+        errorMessage = 'API rate limit exceeded. Please try again later.';
+      } else if (e.toString().contains('500')) {
+        errorMessage = 'OpenAI server error. Please try again later.';
+      } else if (e.toString().contains('No API key')) {
+        errorMessage = 'OpenAI API key not configured. Please add your API key to the .env file.';
+      } else if (e.toString().contains('Connection')) {
+        errorMessage = 'Network connection error. Please check your internet connection.';
+      }
+      
+      return TranscriptionResult.failure(errorMessage);
     }
   }
   
   // Method to call Whisper API
   Future<String> _transcribeWithWhisper(String filePath, {String language = 'en'}) async {
-    final apiKey = dotenv.env['OPENAI_API_KEY']!;
+    final apiKey = dotenv.env['OPENAI_API_KEY'];
+    if (apiKey == null || apiKey.isEmpty) {
+      throw Exception('No API key found in environment variables');
+    }
+    
+    final apiBase = dotenv.env['OPENAI_API_BASE'];
+    if (apiBase == null || apiBase.isEmpty) {
+      throw Exception('No API base URL found in environment variables');
+    }
+    
     final file = File(filePath);
     
     if (!await file.exists()) {
@@ -69,7 +118,7 @@ class TranscriptionService {
     // Create multipart request
     final request = http.MultipartRequest(
       'POST',
-      Uri.parse('${dotenv.env['OPENAI_API_BASE']}/v1/audio/transcriptions'),
+      Uri.parse('$apiBase/v1/audio/transcriptions'),
     );
     
     // Add headers
@@ -87,7 +136,7 @@ class TranscriptionService {
     );
     
     // Add model parameter (using whisper-1 model)
-    request.fields['model'] = 'whisper-1';
+    request.fields['model'] = 'gpt-4o-mini-transcribe';
     
     // Add language parameter if not "en" (English is default for Whisper)
     if (language != 'en') {
