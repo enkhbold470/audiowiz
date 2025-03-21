@@ -7,6 +7,8 @@ import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:path/path.dart' as path;
 
+
+
 class TranscriptionService {
   static final TranscriptionService _instance = TranscriptionService._internal();
   static TranscriptionService get instance => _instance;
@@ -67,7 +69,7 @@ class TranscriptionService {
     // Create multipart request
     final request = http.MultipartRequest(
       'POST',
-      Uri.parse('https://api.openai.com/v1/audio/transcriptions'),
+      Uri.parse('${dotenv.env['OPENAI_API_BASE']}/v1/audio/transcriptions'),
     );
     
     // Add headers
@@ -138,7 +140,7 @@ class TranscriptionService {
     final apiKey = dotenv.env['OPENAI_API_KEY']!;
     
     final response = await http.post(
-      Uri.parse('https://api.openai.com/v1/chat/completions'),
+      Uri.parse('${dotenv.env['OPENAI_API_BASE']}/v1/chat/completions'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $apiKey',
