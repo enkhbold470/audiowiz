@@ -20,6 +20,14 @@ class DatabaseService {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, 'audiowiz.db');
     
+    // Delete existing database during development
+    try {
+      await deleteDatabase(path);
+      print('Deleted existing database to update schema');
+    } catch (e) {
+      print('Error deleting database: $e');
+    }
+    
     return await openDatabase(
       path,
       version: 1,
@@ -39,9 +47,17 @@ class DatabaseService {
         transcription TEXT,
         summary TEXT,
         isProcessed INTEGER,
-        isFavorite INTEGER
+        isFavorite INTEGER,
+        supabaseId TEXT
       )
     ''');
+  }
+  
+  Future<void> _upgradeDatabase(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('ALTER TABLE recordings ADD COLUMN supabaseId TEXT');
+      print('Database upgraded: Added supabaseId column');
+    }
   }
   
   // CRUD operations for recordings
@@ -79,7 +95,12 @@ class DatabaseService {
   
   Future<int> insertRecording(Recording recording) async {
     final db = await database;
-    return await db.insert('recordings', recording.toMap());
+    
+    return await db.insert(
+      'recordings',
+      recording.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
   
   Future<int> updateRecording(Recording recording) async {

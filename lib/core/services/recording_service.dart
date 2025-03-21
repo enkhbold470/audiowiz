@@ -7,6 +7,8 @@ import 'package:audiowiz/core/constants/app_constants.dart';
 import 'package:audiowiz/core/models/recording.dart';
 import 'package:audiowiz/core/services/database_service.dart';
 import 'package:uuid/uuid.dart';
+import 'package:audiowiz/core/services/supabase_service.dart';
+import 'package:sqflite/sqflite.dart';
 
 class RecordingService {
   static final RecordingService _instance = RecordingService._internal();
@@ -109,28 +111,42 @@ class RecordingService {
     }
     
     try {
-      final recordingPath = await _recorder.stop();
-      _isRecording = false;
+      // Add a small delay to ensure encoder has finished
+      await Future.delayed(const Duration(milliseconds: 300));
       
-      if (recordingPath == null) {
+      // Stop the recorder
+      final path = await _recorder.stop();
+      
+      if (path == null) {
         return null;
       }
       
-      // Calculate duration
-      final endTime = DateTime.now();
-      final durationInSeconds = endTime.difference(_recordingStartTime!).inSeconds;
+      _isRecording = false;
       
-      // Create recording model
+      // Calculate duration
+      final now = DateTime.now();
+      final durationInSeconds = now.difference(_recordingStartTime!).inSeconds;
+      
+      // Create recording object without supabaseId
       final recording = Recording(
-        title: title,
-        filePath: recordingPath,
+        title: title.isNotEmpty ? title : 'Recording ${now.toString()}',
+        filePath: path,
         durationInSeconds: durationInSeconds,
+        // Don't include supabaseId field
       );
       
-      // Save to database
+      // Use DatabaseService directly instead of accessing the database
       final id = await DatabaseService.instance.insertRecording(recording);
-      return recording.copyWith(id: id);
+      
+      final savedRecording = recording.copyWith(id: id);
+      
+      // Skip Supabase save for now
+      // if (SupabaseService.instance.isLoggedIn) { ... }
+      
+      return savedRecording;
     } catch (e) {
+      print('Error stopping recording: $e');
+      _isRecording = false;
       return null;
     }
   }

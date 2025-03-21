@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:path/path.dart' as path;
+import 'package:audiowiz/core/services/supabase_service.dart';
 
 // Create a result class to provide more detailed information
 class TranscriptionResult {
@@ -74,8 +75,17 @@ class TranscriptionService {
         isProcessed: true,
       );
       
-      // Save to database
+      // Save to local database
       await DatabaseService.instance.updateRecording(updatedRecording);
+      
+      // If user is logged in and recording has Supabase ID, update in Supabase
+      if (SupabaseService.instance.isLoggedIn && updatedRecording.supabaseId != null) {
+        await SupabaseService.instance.updateRecording(
+          updatedRecording, 
+          updatedRecording.supabaseId!
+        );
+      }
+      
       return TranscriptionResult.successful();
     } catch (e) {
       print('Transcription error: $e');

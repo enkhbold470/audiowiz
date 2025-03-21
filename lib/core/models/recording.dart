@@ -12,6 +12,7 @@ class Recording {
   String? summary;
   bool isProcessed;
   bool isFavorite;
+  String? supabaseId;
 
   Recording({
     this.id,
@@ -23,6 +24,7 @@ class Recording {
     this.summary,
     this.isProcessed = false,
     this.isFavorite = false,
+    this.supabaseId,
   }) : 
     this.uuid = uuid ?? const Uuid().v4(),
     this.createdAt = DateTime.now();
@@ -37,6 +39,7 @@ class Recording {
     String? summary,
     bool? isProcessed,
     bool? isFavorite,
+    String? supabaseId,
   }) {
     return Recording(
       id: id ?? this.id,
@@ -48,6 +51,7 @@ class Recording {
       summary: summary ?? this.summary,
       isProcessed: isProcessed ?? this.isProcessed,
       isFavorite: isFavorite ?? this.isFavorite,
+      supabaseId: supabaseId ?? this.supabaseId,
     );
   }
   
@@ -64,6 +68,7 @@ class Recording {
       'summary': summary,
       'isProcessed': isProcessed ? 1 : 0,
       'isFavorite': isFavorite ? 1 : 0,
+      'supabaseId': supabaseId,
     };
   }
   
@@ -79,6 +84,7 @@ class Recording {
       summary: map['summary'],
       isProcessed: map['isProcessed'] == 1,
       isFavorite: map['isFavorite'] == 1,
+      supabaseId: map['supabaseId'],
     );
   }
 } 

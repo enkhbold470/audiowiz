@@ -16,6 +16,9 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:uuid/uuid.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
+import 'package:audiowiz/features/auth/screens/profile_screen.dart';
+// import 'package:supabase_flutter/supabase_flutter.dart';
+
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -59,6 +62,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       appBar: AppBar(
         title: const Text('AudioWiz'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.account_circle),
+            tooltip: 'Profile',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ProfileScreen(),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.upload_file),
             tooltip: 'Import Audio',
@@ -440,4 +455,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ],
     );
   }
+
+  // void _testSupabaseConnection() async {
+  //   try {
+  //     final user = supabase.auth.currentUser;
+  //     print('Current user: ${user?.id}, ${user?.email}');
+      
+  //     // Try a simple query
+  //     final test = await supabase.from('user_recordings').select('id').limit(1);
+  //     print('Test query result: $test');
+      
+  //     // Try inserting a test record
+  //     final testData = {
+  //       'user_id': user?.id,
+  //       'title': 'Test Recording',
+  //       'duration_in_seconds': 10,
+  //     };
+      
+  //     final result = await supabase.from('user_recordings').insert(testData).select();
+  //     print('Insert test result: $result');
+  //   } catch (e) {
+  //     print('Supabase test error: $e');
+  //   }
+  // }
 } 

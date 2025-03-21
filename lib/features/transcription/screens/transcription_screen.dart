@@ -7,6 +7,8 @@ import 'package:audiowiz/core/services/recording_service.dart';
 import 'package:audiowiz/core/services/transcription_service.dart';
 import 'package:audiowiz/core/services/database_service.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:flutter/foundation.dart';
+import 'package:audiowiz/core/services/supabase_service.dart';
 
 class TranscriptionScreen extends ConsumerStatefulWidget {
   final Recording recording;
@@ -307,6 +309,24 @@ class _TranscriptionScreenState extends ConsumerState<TranscriptionScreen> {
     setState(() {
       _isProcessing = true;
     });
+    
+    // Show debug info
+    if (kDebugMode) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Processing recording: ${_recording.title}'),
+              Text('Supabase ID: ${_recording.supabaseId ?? 'None'}'),
+              Text('User ID: ${SupabaseService.instance.currentUserId ?? 'Not logged in'}'),
+            ],
+          ),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
     
     // Show a progress message
     ScaffoldMessenger.of(context).showSnackBar(
